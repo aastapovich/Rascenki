@@ -1,0 +1,9 @@
+/.continue
+/.github
+/.ruff_cache
+/.venv
+/.vscode
+/25112025.csv
+/27112025.csv
+/__pycache__
+/pyproject.toml

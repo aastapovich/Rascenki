@@ -1,0 +1,7 @@
+{
+  "print_font_path": "",
+  "base_url": "https://example.test",
+  "poisk": "https://example.test/search",
+  "collect_batch_size": 10,
+  "collect_max_categories": 2
+}
