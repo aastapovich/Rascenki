@@ -1,7 +1,7 @@
 from tkinter import Frame, LEFT, RIGHT, BOTH, Y, MULTIPLE
 from tkinter import Scrollbar, Listbox
 from tkinter import Button
-from ui_style import PADDING, SMALL_PADDING
+from ui.ui_style import PADDING, SMALL_PADDING
 
 
 def make_tab(notebook, ctrl):

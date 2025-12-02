@@ -14,7 +14,7 @@ import subprocess
 from tkinter import Frame, Label, Button, messagebox, IntVar, StringVar
 from tkinter import filedialog
 from tkinter import ttk
-from ui_style import PADDING, SMALL_PADDING
+from ui.ui_style import PADDING, SMALL_PADDING
 
 from .print_service import PrintService
 

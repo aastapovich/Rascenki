@@ -1,14 +1,10 @@
-def shorten_name(name: str, max_chars: int = 80) -> str:
-    if not name:
-        return ""
-    name = name.strip()
-    if len(name) <= max_chars:
-        return name
-    cut = name[:max_chars]
-    last_space = cut.rfind(" ")
-    if last_space > max_chars // 2:
-        return cut[:last_space].rstrip() + "..."
-    return cut.rstrip() + "..."
+"""Compatibility shim: re-export utilities from `ui.ui_utils`.
+
+This file remains at the project root to preserve existing imports
+(`from ui_utils import shorten_name`) while the real implementation
+lives in the `ui` package.
+"""
+from ui.ui_utils import *  # noqa: F401,F403
 
 
 class Tooltip:

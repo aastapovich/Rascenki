@@ -8,7 +8,7 @@ RU: Сейчас содержит выбор TTF-шрифта для печат�
 import os
 from tkinter import Frame, Label, Button, StringVar, messagebox, ttk
 from tkinter import filedialog
-from ui_style import PADDING, SMALL_PADDING
+from ui.ui_style import PADDING, SMALL_PADDING
 import json
 
 from .print_service import PrintService

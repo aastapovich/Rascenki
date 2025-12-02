@@ -1,7 +1,7 @@
 from tkinter import Frame, LEFT
 from tkinter import Button
 from tkinter import ttk
-from ui_style import PADDING, SMALL_PADDING
+from ui.ui_style import PADDING, SMALL_PADDING
 
 
 def make_tab(notebook, ctrl):

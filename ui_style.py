@@ -1,6 +1,6 @@
-# UI style constants for consistent spacing and sizes
-# RU: Константы стиля UI для согласованных отступов и размеров
-PADDING = 8
-SMALL_PADDING = 4
-PROGRESS_WIDTH = 400
-LOG_HEIGHT = 10
+"""Compatibility shim: re-export UI style constants from `ui.ui_style`.
+
+Keeps `from ui_style import ...` working while the canonical values are
+defined in `ui/ui_style.py`.
+"""
+from ui.ui_style import *  # noqa: F401,F403
