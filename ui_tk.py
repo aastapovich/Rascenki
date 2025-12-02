@@ -871,17 +871,5 @@ class App:
         finally:
             self.root.after(100, self._poll_queue)
 
-if __name__ == "__main__":
-    # Запуск приложения из этого файла
-    try:
-        App().run()
-    except Exception as e:
-        # Показываем ошибку в консоли — удобно при запуске из терминала
-        import traceback
-        import sys
-
-        try:
-            sys.stderr.write(f"Ошибка при запуске UI: {e}\n")
-        except Exception:
-            pass
-        traceback.print_exc()
+# `ui_tk.py` теперь содержит только реализацию `App` —
+# запуск приложения выполняется из `main.py`.
