@@ -116,6 +116,13 @@ class UIController:
             self._app.price_tree = tree
         except Exception:
             pass
+
+    def stop_parsing(self) -> None:
+        """Request stop of background collection (delegates to app)."""
+        try:
+            return getattr(self._app, "request_stop_collect", lambda: None)()
+        except Exception:
+            return None
         try:
             # use helper from same package
             from .ui_price_helpers import PriceViewHelper

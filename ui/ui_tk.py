@@ -241,12 +241,17 @@ class App:
         """Запускает процесс сбора ссылок."""
         if self.worker_thread and self.worker_thread.is_alive():
             return
+        # Reset stop flag at beginning
+        try:
+            self._collect_stop = False
+        except Exception:
+            self._collect_stop = False
         self.log.delete(1.0, END)
         self.progress["value"] = 0
         self.lbl.config(text="Состояние: запускается сбор ссылок...")
         self.links = []
         self.glava = []
-        self.btn_collect.config(state="disabled")
+        # Note: do not disable collect button so user can request stop
         self.disable_selection_controls()
         self.cat_listbox.delete(0, END)
 
@@ -293,6 +298,10 @@ class App:
                 for link, title in get_all_links_stream(
                     html, poisk, progress_callback=progress_cb, max_categories=maxc
                 ):
+                    # allow cooperative stop request
+                    if getattr(self, "_collect_stop", False):
+                        self.queue.put(("log", "Сбор остановлен пользователем"))
+                        break
                     try:
                         buffer.append((title, link))
                         self.links.append(link)
@@ -337,7 +346,10 @@ class App:
             duration = datetime.now() - start
             self.queue.put(("log", f"Найдено {len(self.glava)} категорий — {duration}"))
             # Если вообще ничего не найдено — возможно ошибка
-            if not self.glava:
+            if getattr(self, "_collect_stop", False):
+                # stopped by user
+                self.queue.put(("done_collect", False))
+            elif not self.glava:
                 self.queue.put(("done_collect", False))
             else:
                 # Сохраняем итоговый файл с датой (копия полного списка)
@@ -351,9 +363,26 @@ class App:
             self.queue.put(("log", f"Ошибка: {e}"))
             self.queue.put(("done_collect", False))
 
+    def request_stop_collect(self):
+        """Установить флаг остановки фоновго сбора (кооперативно)."""
+        try:
+            self._collect_stop = True
+            self.queue.put(("log", "Запрошена остановка сбора"))
+        except Exception:
+            try:
+                object.__setattr__(self, "_collect_stop", True)
+            except Exception:
+                pass
+
     def _on_collect_done(self, ok: bool):
         """Обработчик завершения сбора ссылок."""
         self.btn_collect.config(state="normal")
+        try:
+            # reset button text to start
+            self.btn_collect.config(text="Собрать ссылки (Start)")
+            self.btn_collect.config(command=getattr(self, "start_parsing", lambda: None))
+        except Exception:
+            pass
         if ok and self.glava:
             # заполнить список
             self.cat_listbox.delete(0, END)
@@ -372,14 +401,12 @@ class App:
     def enable_selection_controls(self):
         """Включает кнопки управления отметками."""
         self.btn_mark_all.config(state="normal")
-        self.btn_unmark.config(state="normal")
         self.btn_parse_selected.config(state="normal")
         self.btn_save_selected.config(state="normal")
 
     def disable_selection_controls(self):
         """Отключает кнопки управления отметками."""
         self.btn_mark_all.config(state="disabled")
-        self.btn_unmark.config(state="disabled")
         self.btn_parse_selected.config(state="disabled")
         self.btn_save_selected.config(state="disabled")
 

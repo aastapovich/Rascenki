@@ -26,8 +26,38 @@ def make_tab(notebook, ctrl):
 
     # Buttons — commands are invoked on the controller (delegated to App)
     # RU: Кнопки — команды вызывает контроллер (делегируются в App)
+    def _on_collect_toggle():
+        try:
+            cur = ctrl.btn_collect.cget("text")
+        except Exception:
+            cur = ""
+        # If currently in 'start' state -> start parsing and switch to Stop
+        if "Собрать" in cur:
+            try:
+                ctrl.start_parsing()
+            except Exception:
+                pass
+            try:
+                ctrl.btn_collect.config(text="Остановить сбор (Stop)")
+            except Exception:
+                pass
+        else:
+            # Request stop via controller API if available
+            try:
+                if hasattr(ctrl, "stop_parsing"):
+                    ctrl.stop_parsing()
+                else:
+                    # fallback: try to call request_stop_collect on app
+                    getattr(ctrl, "request_stop_collect", lambda: None)()
+            except Exception:
+                pass
+            try:
+                ctrl.btn_collect.config(text="Собрать ссылки (Start)")
+            except Exception:
+                pass
+
     ctrl.btn_collect = Button(
-        cat_control_frame, text="Собрать ссылки (Start)", command=ctrl.start_parsing
+        cat_control_frame, text="Собрать ссылки (Start)", command=_on_collect_toggle
     )
     ctrl.btn_collect.pack(side=LEFT, padx=4, pady=2)
 
@@ -36,15 +66,34 @@ def make_tab(notebook, ctrl):
     )
     ctrl.btn_load_cat.pack(side=LEFT, padx=4, pady=2)
 
+    def _on_mark_toggle():
+        try:
+            cur = ctrl.btn_mark_all.cget("text")
+        except Exception:
+            cur = ""
+        if "Отметить" in cur:
+            try:
+                ctrl.mark_all()
+            except Exception:
+                pass
+            try:
+                ctrl.btn_mark_all.config(text="Снять отметки")
+            except Exception:
+                pass
+        else:
+            try:
+                ctrl.unmark_all()
+            except Exception:
+                pass
+            try:
+                ctrl.btn_mark_all.config(text="Отметить все")
+            except Exception:
+                pass
+
     ctrl.btn_mark_all = Button(
-        cat_control_frame, text="Отметить все", command=ctrl.mark_all, state="disabled"
+        cat_control_frame, text="Отметить все", command=_on_mark_toggle, state="disabled"
     )
     ctrl.btn_mark_all.pack(side=LEFT, padx=4, pady=2)
-
-    ctrl.btn_unmark = Button(
-        cat_control_frame, text="Снять отметки", command=ctrl.unmark_all, state="disabled"
-    )
-    ctrl.btn_unmark.pack(side=LEFT, padx=4, pady=2)
 
     ctrl.btn_parse_selected = Button(
         cat_control_frame, text="Парсить отмеченные", command=ctrl.parse_selected, state="disabled"
@@ -55,6 +104,21 @@ def make_tab(notebook, ctrl):
         cat_control_frame, text="Сохранить отмеченные...", command=ctrl.save_selected, state="disabled"
     )
     ctrl.btn_save_selected.pack(side=LEFT, padx=4, pady=2)
+
+    # Exit button
+    def _on_exit():
+        try:
+            # controller proxies to app methods
+            getattr(ctrl, "_on_close", lambda: None)()
+        except Exception:
+            try:
+                # fallback to direct app attribute
+                getattr(ctrl, "_app", None) and getattr(ctrl._app, "_on_close", lambda: None)()
+            except Exception:
+                pass
+
+    ctrl.btn_exit = Button(cat_control_frame, text="Выход", command=_on_exit)
+    ctrl.btn_exit.pack(side=LEFT, padx=4, pady=2)
 
     # Categories list
     # RU: Список категорий
