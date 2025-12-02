@@ -1,18 +1,15 @@
-def shorten_name(name: str, max_chars: int = 80) -> str:
-    if not name:
-        return ""
-    name = name.strip()
-    if len(name) <= max_chars:
-        return name
-    cut = name[:max_chars]
-    last_space = cut.rfind(" ")
-    if last_space > max_chars // 2:
-        return cut[:last_space].rstrip() + "..."
-    return cut.rstrip() + "..."
+"""Tooltip helper for Treeview-like widgets.
+
+Contains the `Tooltip` class previously located in `ui_utils.py`.
+"""
+from __future__ import annotations
+
+from tkinter import Toplevel, Message
+from typing import Any
 
 
 class Tooltip:
-    def __init__(self, root, wrap_width=400, delay_ms=300):
+    def __init__(self, root, wrap_width: int = 400, delay_ms: int = 300):
         self.root = root
         self.wrap_width = wrap_width
         self.delay_ms = delay_ms
@@ -22,8 +19,6 @@ class Tooltip:
         self._row = None
 
     def bind_to(self, tree, get_full_func, column=2):
-        # get_full_func: callable(item_id) -> text
-        # RU: get_full_func: вызываемый объект(ид_элемента) -> текст (полное наименование)
         def _motion(event):
             try:
                 rowid = tree.identify_row(event.y)
@@ -39,9 +34,7 @@ class Tooltip:
                     return
                 if self._row == rowid and self._tooltip:
                     try:
-                        self._tooltip.geometry(
-                            f"+{event.x_root + 20}+{event.y_root + 10}"
-                        )
+                        self._tooltip.geometry(f"+{event.x_root + 20}+{event.y_root + 10}")
                     except Exception:
                         pass
                     return
