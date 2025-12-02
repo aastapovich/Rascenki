@@ -20,7 +20,8 @@ class PriceViewHelper:
         self.app = app
         self.tree = tree
         self.wrap_width = wrap_width
-        self.delay_ms = delay_ms
+        # store as private to avoid accidental shadowing by property
+        self._delay_ms = delay_ms
         self._after_id = None
         self._tooltip = None
         self._tooltip_label = None
@@ -105,9 +106,8 @@ class PriceViewHelper:
                     self._show_tooltip(full, xr + 20, yr + 10)
                 except Exception:
                     pass
-
             try:
-                self._after_id = self.app.root.after(self.delay_ms, _deferred)
+                self._after_id = self.app.root.after(self._delay_ms, _deferred)
             except Exception:
                 try:
                     _deferred()
@@ -118,7 +118,7 @@ class PriceViewHelper:
 
     @property
     def delay_ms(self) -> int:
-        return self.delay_ms
+        return self._delay_ms
 
     def _on_leave(self, event):
         if self._after_id:
