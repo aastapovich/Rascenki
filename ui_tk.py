@@ -560,34 +560,27 @@ class App:
     # Shorten helper moved to ui_utils.shorten_name
 
     def _on_price_row_select(self, event=None):
-        """Показывает всплывающую подсказку с полным названием для выбранной строки."""
+        """Legacy hook left for compatibility; most behavior is handled by PriceViewHelper."""
         try:
             sel = self.price_tree.selection()
             if not sel:
                 return
             item = sel[0]
-            # берём полное имя из кэша, если оно есть
             full = self._full_names.get(item, self.price_tree.set(item, "Наименование"))
-            if not full:
-                return
-            # покажем краткую подсказку в статусе
-            self.progress_log.config(text=full)
+            if full:
+                self.progress_log.config(text=full)
         except Exception:
             pass
 
     def _on_price_double_click(self, event):
-        """Открывает окно с полным текстом Наименования при двойном клике."""
+        # kept for backward compatibility; PriceViewHelper handles double-click
         try:
             item_id = self.price_tree.identify_row(event.y)
             if not item_id:
                 return
-            # берём полное имя из кэша, если оно есть
-            full = self._full_names.get(
-                item_id, self.price_tree.set(item_id, "Наименование")
-            )
+            full = self._full_names.get(item_id, self.price_tree.set(item_id, "Наименование"))
             if not full:
                 return
-            # простое окно с текстом
             top = Toplevel(self.root)
             top.title("Наименование")
             txt = Text(top, wrap="word", height=10, width=80)
@@ -599,141 +592,27 @@ class App:
 
     # Tooltip handlers for Treeview rows
     def _on_price_motion(self, event):
+        # legacy hook — behavior provided by PriceViewHelper
+        return
+
+    def _on_price_leave(self, event):
+        # legacy hook — behavior provided by PriceViewHelper
+        return
+
+    def _show_tooltip(self, full_text, x, y):
+        # legacy hook — behavior provided by PriceViewHelper
+        return
+
+    def _destroy_tooltip(self):
+        # legacy hook — behavior provided by PriceViewHelper
         try:
-            rowid = self.price_tree.identify_row(event.y)
-            col = self.price_tree.identify_column(event.x)
-            # Показываем тултип только для колонки 'Наименование' (#2)
-            if not rowid or col != "#2":
-                # отменить запланированный тултип, если есть
-                if self._tooltip_after_id:
-                    try:
-                        self.root.after_cancel(self._tooltip_after_id)
-                    except Exception:
-                        pass
-                    self._tooltip_after_id = None
-                self._destroy_tooltip()
-                return
-
-            # Если уже запланирован тултип для ту же строку — ничего не делаем
-            if (
-                self._tooltip_row == rowid
-                and self._tooltip
-                and getattr(self, "_tooltip_label", None)
-            ):
-                # просто переместим тултип рядом с курсором
+            if getattr(self, "_tooltip", None):
                 try:
-                    self._tooltip.geometry(f"+{event.x_root + 20}+{event.y_root + 10}")
-                except Exception:
-                    pass
-                return
-
-            # Переназначаем запланированный показ тултипа
-            if self._tooltip_after_id:
-                try:
-                    self.root.after_cancel(self._tooltip_after_id)
-                except Exception:
-                    pass
-                self._tooltip_after_id = None
-
-            # Сохраняем текущую строку и планируем показ через задержку
-            self._tooltip_row = rowid
-
-            def _deferred_show(r=rowid, xr=event.x_root, yr=event.y_root):
-                try:
-                    # если курсор уже ушёл или строка изменилась — не показываем
-                    if self._tooltip_row != r:
-                        return
-                    full = self._full_names.get(
-                        r, self.price_tree.set(r, "Наименование")
-                    )
-                    if not full:
-                        return
-                    self._show_tooltip(full, xr + 20, yr + 10)
-                except Exception:
-                    pass
-
-            try:
-                self._tooltip_after_id = self.root.after(
-                    self._tooltip_delay_ms, _deferred_show
-                )
-            except Exception:
-                try:
-                    _deferred_show()
+                    self._tooltip.destroy()
                 except Exception:
                     pass
         except Exception:
             pass
-
-    def _on_price_leave(self, event):
-        # отменяем запланированный показ
-        if self._tooltip_after_id:
-            try:
-                self.root.after_cancel(self._tooltip_after_id)
-            except Exception:
-                pass
-            self._tooltip_after_id = None
-        self._tooltip_row = None
-        self._destroy_tooltip()
-
-    def _show_tooltip(self, full_text, x, y):
-        # Удаляем старый тултип если был
-        self._destroy_tooltip()
-        try:
-            self._tooltip = Toplevel(self.root)
-            self._tooltip.wm_overrideredirect(True)
-            try:
-                self._tooltip.attributes("-topmost", True)
-            except Exception:
-                pass
-            # Используем Message для стабильного переноса и фиксированной ширины
-            from tkinter import Message
-
-            # Явно задаём цвета, чтобы текст был читаем в тёмной теме
-            msg = Message(
-                self._tooltip,
-                text=full_text,
-                justify="left",
-                background="#ffffe0",
-                foreground="black",
-                relief="solid",
-                borderwidth=1,
-                width=400,
-            )
-            msg.pack(ipadx=6, ipady=4)
-            self._tooltip_label = msg
-            # Даем виджету время вычислить размеры, затем корректируем позиционирование
-            try:
-                self._tooltip.update_idletasks()
-                tw = self._tooltip.winfo_width()
-                th = self._tooltip.winfo_height()
-                sw = self.root.winfo_screenwidth()
-                sh = self.root.winfo_screenheight()
-                nx = x
-                ny = y
-                # Если тултип выходит за правый край экрана — сдвинем влево
-                if nx + tw + 10 > sw:
-                    nx = max(10, sw - tw - 10)
-                # Если тултип выходит за нижний край — сдвинем вверх
-                if ny + th + 10 > sh:
-                    ny = max(10, sh - th - 10)
-                self._tooltip.geometry(f"+{nx}+{ny}")
-            except Exception:
-                try:
-                    self._tooltip.geometry(f"+{x}+{y}")
-                except Exception:
-                    pass
-        except Exception:
-            self._destroy_tooltip()
-
-    def _destroy_tooltip(self):
-        if getattr(self, "_tooltip", None):
-            try:
-                self._tooltip.destroy()
-            except Exception:
-                pass
-        self._tooltip = None
-        self._tooltip_label = None
-        # _tooltip_row оставляем, он обнуляется при leave
 
     def export_price_csv(self):
         """Экспортирует данные из price.csv в выбранный файл."""

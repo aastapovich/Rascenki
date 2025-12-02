@@ -143,43 +143,30 @@ class UIController:
         except Exception:
             pass
         try:
-            # Attach tooltip manager if available (create if needed)
-            # RU: Подключаем менеджер тултипов, если он доступен (создаем при необходимости)
-            if not getattr(self._app, "_tooltip_mgr", None):
-                try:
-                    from ui_utils import Tooltip
+            # Prefer using a dedicated helper that wires tooltip, selection and double-click
+            from ui_price_helpers import PriceViewHelper
 
-                    self._app._tooltip_mgr = Tooltip(self._app.root, wrap_width=400, delay_ms=getattr(self._app, "_tooltip_delay_ms", 300))
-                except Exception:
-                    self._app._tooltip_mgr = None
-            if getattr(self._app, "_tooltip_mgr", None):
+            try:
+                # create helper which will bind the required events
+                PriceViewHelper(self._app, tree, wrap_width=400, delay_ms=getattr(self._app, "_tooltip_delay_ms", 300))
+            except Exception:
+                # fallback to a minimal binding: selection updates status line
                 try:
-                    self._app._tooltip_mgr.bind_to(
-                        tree,
-                        lambda item: self._app._full_names.get(item, tree.set(item, "Наименование")),
-                        column=2,
-                    )
+                    def _sel(e=None):
+                        try:
+                            sel = tree.selection()
+                            if not sel:
+                                return
+                            item = sel[0]
+                            full = self._app._full_names.get(item, tree.set(item, "Наименование"))
+                            if full:
+                                self._app.progress_log.config(text=full)
+                        except Exception:
+                            pass
+
+                    tree.bind('<<TreeviewSelect>>', _sel)
                 except Exception:
                     pass
-            # bind mouse motion/leave handlers if present on app
-            # RU: привязываем обработчики движения мыши/ухода, если они есть в app
-            try:
-                tree.bind('<Motion>', getattr(self._app, '_on_price_motion', lambda e=None: None))
-            except Exception:
-                pass
-            try:
-                tree.bind('<Leave>', getattr(self._app, '_on_price_leave', lambda e=None: None))
-            except Exception:
-                pass
-            # selection and double-click handlers
-            try:
-                tree.bind('<<TreeviewSelect>>', getattr(self._app, '_on_price_row_select', lambda e=None: None))
-            except Exception:
-                pass
-            try:
-                tree.bind('<Double-1>', getattr(self._app, '_on_price_double_click', lambda e=None: None))
-            except Exception:
-                pass
         except Exception:
             pass
 
