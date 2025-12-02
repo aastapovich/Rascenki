@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+*.pdf
+*.log
+*.tmp
+*.temp
+*.sqlite3
+*.db
+.vscode/
+__pycache__/
+*.pytest_cache/
+# macOS
+.AppleDouble
+.LSOverride
+# virtualenv
+.env/
+venv/
+.Python
+# pyenv
+.python-version
+# pytest
+.cache

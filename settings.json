@@ -1,0 +1,7 @@
+{
+  "print_font_path": "",
+  "base_url": "https://rascenki.kz",
+  "poisk": "https://rascenki.kz/city/astana/",
+  "collect_batch_size": 10,
+  "collect_max_categories": 2
+}
