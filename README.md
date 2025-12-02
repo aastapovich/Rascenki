@@ -1,62 +1,63 @@
-Rascenki parser
+Rascenki — парсер и GUI для экспорта прайс-листов
 
-Коротко
-- GUI: `ui_tk.py` — Tkinter приложение для сбора ссылок и парсинга категорий.
-- Scraper: `rascenki_kz.py` — функции для загрузки страниц и записи CSV.
+Кратко
+- GUI: `main.py` → запускает `App` из `ui_tk.py` (Tkinter).
+- Scraper: `scraper.py` — загрузка страниц и парсинг контента.
+- Хранилище и экспорт: `storage.py` работает с `cat_*.csv` и `price.csv`.
 
-Зависимости
-```bash
-pip3 install -r requirements.txt
-```
+Быстрый старт
 
-Запуск
-- Запустить GUI: `python3 ui_tk.py`
-- CLI-парсинг (базовый): `python3 rascenki_kz.py`
-
-Особенности
-- При старте `ui_tk.py` пытается загрузить последний `ddmmyyyy.csv` (или `cat_a.csv`). Если не найден — автоматически собирает ссылки.
-- Формат CSV категорий: `Название категории,Ссылка`.
-- Результат парсинга дописывается в `price.csv`.
-
-Конвенция комментариев / docstrings
-- Все новые и отредактированные inline‑комментарии и docstrings должны быть bilingual: сначала English, затем Russian.
-- Пример:
-
-```python
-# Brief English description
-# RU: Краткое описание на русском
-def foo():
-		pass
-```
-
-Controller / Tab contract
-- Tabs are created via `make_tab(notebook, ctrl)` where `ctrl` is an instance of `UIController`.
-- `UIController` delegates attribute access to the real `App` and exposes helpers:
-	- `post_log(msg)`, `post_status(msg)`, `post_new_category(title, link, idx=None)`,
-	- `post_progress(processed, total, found)`, `post_done_collect(ok)`,
-	- `start_parsing()`, `load_price_csv()`, `export_price_csv()`, `parse_selected()`, `save_selected()`,
-	- `load_categories_file()`, `mark_all()`, `unmark_all()`,
-	- `register_price_tree(tree)` — register and wire Treeview for tooltip/handlers.
-
-Development / formatting
-- Recommended: create and activate the virtualenv from repo root, then install dev tools and runtime deps:
+1. Создайте виртуальное окружение и установите зависимости:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pip install black ruff
 ```
 
-- Run formatters before committing:
+2. Запуск GUI:
 
 ```bash
-ruff format .
-black .
+python3 main.py
 ```
 
-Советы для разработчика
-- `get_all_links` печатает прогресс с `\r` — UI перехватывает stdout и отображает однострочный статус.
-- `get_page_data` возвращает `(blok, index)` — индекс увеличивается автоматически внутри функции, глобальных переменных избегаем.
+Проектная структура (основные файлы)
 
-Если нужны дополнительные функции (кнопка выбора выходной папки, переключение формата CSV) — откройте issue или предложите изменения.
+- `main.py` — точка входа приложения (запускает `App`).
+- `ui_tk.py` — реализация класса `App` (UI + логика взаимодействия с парсером).
+- `config.py` — загрузчик настроек из `settings.json` с дефолтами.
+- `scraper.py` — функции `open_web`, `get_all_links_stream`, `get_page_data`.
+- `storage.py` — чтение/запись `cat_*.csv` и `price.csv`.
+- `ui_utils.py` — общие мелкие утилиты (например, `shorten_name`).
+- `ui_animator.py` — `ProgressAnimator` для плавной анимации прогресса.
+- `ui/` — пакет с UI‑вспомогательными компонентами: `Tooltip`, `QueueWriter`.
+- `tabs/` — реализация вкладок интерфейса (`categories_tab.py`, `price_tab.py`, `print_tab.py`, `settings_tab.py`).
+
+Ключевые изменения и рекомендации (рефакторинг)
+
+- Ветка с правками: `refactor/small-cleanups` — содержит безопасные рефакторинги:
+	- `storage.py` — использует `pathlib.Path`, явное кодирование `utf-8` и типы.
+	- `scraper.py` — использует `requests.Session` и небольшие типизации.
+	- Вынесены помощники UI: `ProgressAnimator` → `ui_animator.py`, `Tooltip` и `QueueWriter` → пакет `ui/`, логика TreeView → `ui_price_helpers.py`.
+	- `config.py` добавлен для централизованной загрузки `settings.json`.
+	- Добавлен `main.py` как единая точка запуска.
+
+Текущий рабочий процесс разработки
+
+- Запуск приложения: `python3 main.py`.
+- Для отладки: запустите `python3 -m pdb main.py` или откройте проект в IDE.
+
+Тесты и CI
+
+В репозитории пока нет покрывающих unit‑тестов. Рекомендую добавить тесты для:
+- `scraper.get_page_data` (парсинг HTML в структуры данных),
+- `storage.save_categories_partial` / `write_data_csv`,
+- `config.load_settings`.
+
+Лицензия и вклад
+
+Если хотите, я могу подготовить PR из `refactor/small-cleanups` в `main` с описанием изменений и добавить базовый CI (GitHub Actions) и тесты. Откройте issue или напишите, какие дополнительные функции нужны.
+
+---
+RU: README обновлён — содержит инструкции по установке, запуску, структуре и примечания к рефакторингу.
+
