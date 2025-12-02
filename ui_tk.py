@@ -42,183 +42,29 @@ class App:
         потоки, а также вспомогательные компоненты (анимация прогресса,
         менеджер тултипов, виджет лога).
         """
-        # Загружаемые настройки (settings.json) — попытаемся прочесть print_font_path
+        # Load settings using the dedicated config loader (see `config.py`)
         try:
-            import json
+            from config import load_settings
 
-            p = os.path.join(os.getcwd(), "settings.json")
-            if os.path.exists(p):
-                with open(p, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                self.print_font_path = cfg.get("print_font_path")
-                self.base_url = cfg.get("base_url", "https://rascenki.kz")
-                self.poisk = cfg.get("poisk", "https://rascenki.kz/city/astana/")
-                # collection settings
-                self.collect_batch_size = cfg.get("collect_batch_size", 50)
-                self.collect_max_categories = cfg.get("collect_max_categories", None)
-            else:
-                self.print_font_path = None
-                self.base_url = "https://rascenki.kz"
-                self.poisk = "https://rascenki.kz/city/astana/"
-                self.collect_batch_size = 50
-                self.collect_max_categories = None
+            cfg = load_settings()
+            self.print_font_path = cfg.get("print_font_path")
+            self.base_url = cfg.get("base_url", "https://rascenki.kz")
+            self.poisk = cfg.get("poisk", "https://rascenki.kz/city/astana/")
+            # collection settings
+            self.collect_batch_size = cfg.get("collect_batch_size", 50)
+            self.collect_max_categories = cfg.get("collect_max_categories", None)
         except Exception:
+            # Fallback defaults
             self.print_font_path = None
             self.base_url = "https://rascenki.kz"
             self.poisk = "https://rascenki.kz/city/astana/"
             self.collect_batch_size = 50
             self.collect_max_categories = None
 
-        self.root = Tk()
-        self.root.title("Parser")
-        self.root.geometry("1200x600")
-
-        # Top status/progress bar (moved below the tabs)
-        # RU: Верхняя панель состояния и прогресс (перенесена ниже вкладок)
-        # It is created later, after tab initialization
-        # RU: Создаётся позднее, после инициализации вкладок
-
-        # Notebook with tabs
-        # RU: Notebook с вкладками
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill=BOTH, expand=True, padx=PADDING, pady=SMALL_PADDING)
-
-        # Auto-load when switching notebook tabs
-        # RU: Автозагрузка при переключении вкладок
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
-
-        # Tab: Categories (moved to a separate module)
-        # RU: Вкладка: Категории (перенесена в отдельный модуль)
-        try:
-            # controller adapter to decouple tabs from App
-            # RU: controller адаптер для изоляции вкладок
-            self.controller = UIController(self)
-            from tabs.categories_tab import make_tab as make_categories_tab
-
-            self.tab_cat = make_categories_tab(self.notebook, self.controller)
-            self.notebook.add(self.tab_cat, text="Категории")
-        except Exception:
-            # On error: skip creating the tab but ensure controller exists
-            # RU: В случае ошибки — пропускаем создание вкладки
-            # RU: гарантия: обеспечим controller на всякий случай
-            try:
-                self.controller = UIController(self)
-            except Exception:
-                self.controller = None
-            pass
-
-        # Tab: price.csv viewer (moved to a separate module)
-        # RU: Вкладка: Просмотр price.csv (перенесена в отдельный модуль)
-        try:
-            from tabs.price_tab import make_tab as make_price_tab
-
-            self.tab_price = make_price_tab(self.notebook, self.controller or self)
-            self.notebook.add(self.tab_price, text="Просмотр price.csv")
-        except Exception:
-            pass
-
-        # After creating tabs — create the top status/progress panel
-        # RU: После создания вкладок — создаём верхнюю панель состояния и прогресс
-        top_frame = Frame(self.root)
-        top_frame.pack(fill="x", padx=PADDING, pady=SMALL_PADDING)
-
-        self.lbl = Label(top_frame, text="Состояние: готов")
-        self.lbl.grid(row=0, column=0, sticky="w")
-
-        self.progress = ttk.Progressbar(
-            top_frame, orient="horizontal", length=PROGRESS_WIDTH, mode="determinate"
-        )
-        self.progress.grid(row=0, column=1, sticky="w", padx=8)
-
-        # Single-line progress log — located next to the progressbar
-        # RU: Однострочный лог прогресса — находится рядом с прогрессбаром
-        self.progress_log = Label(top_frame, text="", width=60, anchor="w")
-        self.progress_log.grid(row=0, column=2, sticky="w", padx=8)
-
-        # Progress animator (remains on the App level)
-        # RU: Progress animator (аниматор прогресса остаётся на уровне App)
-        self._animator = ProgressAnimator(self.root, self.progress)
-
-        # Tab: Print / PDF (created via tabs/print_tab)
-        # RU: Вкладка: Печать / PDF (создаётся через tabs/print_tab)
-        try:
-            self.tab_print = make_print_tab(self.notebook, self.controller or self)
-            self.notebook.add(self.tab_print, text="Печать / PDF")
-        except Exception:
-            # If something goes wrong creating/importing the tab — skip it
-            # RU: Если что-то пойдёт не так с импортом/созданием вкладки — пропускаем
-            pass
-        # Settings tab
-        # RU: Вкладка настроек
-        try:
-            self.tab_settings = make_settings_tab(self.notebook, self.controller or self)
-            self.notebook.add(self.tab_settings, text="Настройки")
-        except Exception:
-            pass
-
-        # Temporary print files will be cleaned up on close
-        # RU: Список временных файлов печати будет очищён при закрытии
-        try:
-            self.root.protocol("WM_DELETE_WINDOW", self._on_close)
-        except Exception:
-            pass
-
-        # Log widget
-        # RU: Лог
-        self.log = Text(self.root, height=LOG_HEIGHT)
-        self.log.pack(fill="both", expand=False, padx=PADDING, pady=SMALL_PADDING)
-
-        # Helper fields
-        # RU: Вспомогательные поля
-        self.queue = queue.Queue()
-        self.worker_thread = None
-        self.parse_thread = None
-        self.links = []
-        self.glava = []
-        # Dictionary to store full names for price.csv entries
-        # RU: Словарь для хранения полного наименования записей price.csv
-        self._full_names = {}
-        # Tooltip state (used by tooltip helpers)
-        # RU: Tooltip state (используется helper-ами тултипов)
-        self._tooltip = None
-        self._tooltip_label = None
-        self._tooltip_after_id = None
-        self._tooltip_row = None
-        self._tooltip_delay_ms = 300
-
-        # Queue polling
-        # RU: опрос очереди
-        # Try to load category catalog on startup; if not found — start collection
-        # RU: Попытка загрузить каталог ссылок при старте; если файл не найден — запустить сбор
-        # If price_tree was created in a tab module — attach tooltip manager
-        # RU: Если price_tree создан в модуле вкладки — подключаем тултип менеджер
-        try:
-            # Avoid KeyError if Tooltip is not available/imported
-            # RU: Убираем возможный KeyError, если Tooltip не импортирован/не доступен
-            self._tooltip_mgr = Tooltip(
-                self.root, wrap_width=400, delay_ms=self._tooltip_delay_ms
-            )
-            if hasattr(self, "price_tree"):
-                try:
-                    self._tooltip_mgr.bind_to(
-                        self.price_tree,
-                        lambda item: self._full_names.get(
-                            item, self.price_tree.set(item, "Наименование")
-                        ),
-                        column=2,
-                    )
-                except Exception:
-                    pass
-                try:
-                    self.price_tree.bind("<Motion>", self._on_price_motion)
-                    self.price_tree.bind("<Leave>", self._on_price_leave)
-                except Exception:
-                    pass
-        except Exception:
-            self._tooltip_mgr = None
-
-        self._load_or_collect_categories_on_start()
-        self.root.after(100, self._poll_queue)
+        # Initialize UI and worker subsystems in dedicated methods to keep
+        # __init__ concise and readable.
+        self._init_ui()
+        self._init_workers()
 
     def _load_or_collect_categories_on_start(self):
         """Загружает последний файл категорий формата ddmmyyyy.csv если есть,
@@ -266,6 +112,126 @@ class App:
     def run(self):
         """Запускает главный цикл приложения."""
         self.root.mainloop()
+
+    def _init_ui(self):
+        """Initialize the Tk UI: root window, notebook, tabs, status and log widgets.
+
+        RU: Инициализация UI: главное окно, вкладки, панель состояния и лог.
+        """
+        self.root = Tk()
+        self.root.title("Parser")
+        self.root.geometry("1200x600")
+
+        # Notebook with tabs
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill=BOTH, expand=True, padx=PADDING, pady=SMALL_PADDING)
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
+        # controller adapter to decouple tabs from App
+        try:
+            self.controller = UIController(self)
+        except Exception:
+            self.controller = None
+
+        # Create tabs (each tab registers widgets via controller)
+        try:
+            from tabs.categories_tab import make_tab as make_categories_tab
+
+            self.tab_cat = make_categories_tab(self.notebook, self.controller)
+            self.notebook.add(self.tab_cat, text="Категории")
+        except Exception:
+            pass
+
+        try:
+            from tabs.price_tab import make_tab as make_price_tab
+
+            self.tab_price = make_price_tab(self.notebook, self.controller or self)
+            self.notebook.add(self.tab_price, text="Просмотр price.csv")
+        except Exception:
+            pass
+
+        # Top status/progress panel
+        top_frame = Frame(self.root)
+        top_frame.pack(fill="x", padx=PADDING, pady=SMALL_PADDING)
+
+        self.lbl = Label(top_frame, text="Состояние: готов")
+        self.lbl.grid(row=0, column=0, sticky="w")
+
+        self.progress = ttk.Progressbar(
+            top_frame, orient="horizontal", length=PROGRESS_WIDTH, mode="determinate"
+        )
+        self.progress.grid(row=0, column=1, sticky="w", padx=8)
+
+        self.progress_log = Label(top_frame, text="", width=60, anchor="w")
+        self.progress_log.grid(row=0, column=2, sticky="w", padx=8)
+
+        self._animator = ProgressAnimator(self.root, self.progress)
+
+        # Print / Settings tabs
+        try:
+            self.tab_print = make_print_tab(self.notebook, self.controller or self)
+            self.notebook.add(self.tab_print, text="Печать / PDF")
+        except Exception:
+            pass
+        try:
+            self.tab_settings = make_settings_tab(self.notebook, self.controller or self)
+            self.notebook.add(self.tab_settings, text="Настройки")
+        except Exception:
+            pass
+
+        try:
+            self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        except Exception:
+            pass
+
+        # Log widget
+        self.log = Text(self.root, height=LOG_HEIGHT)
+        self.log.pack(fill="both", expand=False, padx=PADDING, pady=SMALL_PADDING)
+
+        # Helper fields
+        self.queue = queue.Queue()
+        self.worker_thread = None
+        self.parse_thread = None
+        self.links = []
+        self.glava = []
+        self._full_names = {}
+        self._tooltip = None
+        self._tooltip_label = None
+        self._tooltip_after_id = None
+        self._tooltip_row = None
+        self._tooltip_delay_ms = 300
+
+        # Tooltip manager (attach to price_tree if present)
+        try:
+            self._tooltip_mgr = Tooltip(
+                self.root, wrap_width=400, delay_ms=self._tooltip_delay_ms
+            )
+            if hasattr(self, "price_tree"):
+                try:
+                    self._tooltip_mgr.bind_to(
+                        self.price_tree,
+                        lambda item: self._full_names.get(item, self.price_tree.set(item, "Наименование")),
+                        column=2,
+                    )
+                except Exception:
+                    pass
+                try:
+                    self.price_tree.bind("<Motion>", self._on_price_motion)
+                    self.price_tree.bind("<Leave>", self._on_price_leave)
+                except Exception:
+                    pass
+        except Exception:
+            self._tooltip_mgr = None
+
+    def _init_workers(self):
+        """Initialize worker-related scheduling and start queue polling.
+
+        RU: Инициализация вспомогательных потоков/планировщика и запуск опроса очереди.
+        """
+        # Attempt to load categories on startup; if not found — start collection
+        self._load_or_collect_categories_on_start()
+        # Start polling the queue for events from background threads
+        self.root.after(100, self._poll_queue)
 
     # ----- Сбор ссылок (как ранее)
     def start_parsing(self):
