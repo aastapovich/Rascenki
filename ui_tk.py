@@ -15,7 +15,8 @@ from tkinter import (
 from tkinter import ttk
 from scraper import open_web, get_all_links_stream, get_page_data
 from storage import save_categories, save_categories_partial, write_data_csv
-from ui_utils import Tooltip, ProgressAnimator, QueueWriter, shorten_name
+from ui_utils import Tooltip, QueueWriter, shorten_name
+from ui_animator import ProgressAnimator
 from ui_style import PADDING, SMALL_PADDING, PROGRESS_WIDTH, LOG_HEIGHT
 from tabs.print_tab import make_tab as make_print_tab
 from tabs.settings_tab import make_tab as make_settings_tab
