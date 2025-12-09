@@ -158,7 +158,7 @@ def get_page_data(html, gl):
 
     for index, tag in enumerate(job_name, start=1):
         name_job = tag.text.strip() if tag.text else ""
-        ed = [e.text.strip() for e in tag.findNextSiblings() if e.text]
+        ed = [e.text.strip() for e in tag.find_next_siblings() if e.text]
         ed += [""] * (2 - len(ed))
         blok.append(
             {"№": index, "Наименование": name_job, "Цена": ed[0], "Ед. изм": ed[1]}

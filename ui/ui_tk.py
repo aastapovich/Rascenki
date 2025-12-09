@@ -219,8 +219,10 @@ class App:
                 except Exception:
                     pass
                 try:
-                    self.price_tree.bind("<Motion>", self._on_price_motion)
-                    self.price_tree.bind("<Leave>", self._on_price_leave)
+                    # Do not overwrite existing handlers (Tooltip/PriceViewHelper);
+                    # append legacy handlers instead.
+                    self.price_tree.bind("<Motion>", self._on_price_motion, add="+")
+                    self.price_tree.bind("<Leave>", self._on_price_leave, add="+")
                 except Exception:
                     pass
         except Exception:
