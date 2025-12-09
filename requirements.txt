@@ -2,3 +2,4 @@ beautifulsoup4
 lxml
 reportlab
 requests
+pytest

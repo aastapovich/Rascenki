@@ -61,3 +61,10 @@ python3 main.py
 ---
 RU: README обновлён — содержит инструкции по установке, запуску, структуре и примечания к рефакторингу.
 
+## Changelog / Recent fixes
+
+- PR: Fix tooltip binding overwrite and BS4 deprecation — https://github.com/aastapovich/Rascenki/pull/1
+	- Preserve Tooltip handlers by appending legacy binds where needed.
+	- Replace deprecated BeautifulSoup.findNextSiblings with find_next_siblings in `scraper.py`.
+	- Centralized Treeview tooltip logic in `ui/ui_price_helpers.py` via `PriceViewHelper`.
+
