@@ -218,11 +218,8 @@ class App:
                     )
                 except Exception:
                     pass
-                try:
-                    self.price_tree.bind("<Motion>", self._on_price_motion)
-                    self.price_tree.bind("<Leave>", self._on_price_leave)
-                except Exception:
-                    pass
+                # PriceViewHelper will attach its own event handlers when the
+                # Treeview is registered via controller.register_price_tree.
         except Exception:
             self._tooltip_mgr = None
 

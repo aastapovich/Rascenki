@@ -116,6 +116,16 @@ class UIController:
             self._app.price_tree = tree
         except Exception:
             pass
+        try:
+            # Attach PriceViewHelper so tooltip/double-click logic is centralized
+            from .ui_price_helpers import PriceViewHelper
+
+            try:
+                PriceViewHelper(self._app, tree, wrap_width=400, delay_ms=getattr(self._app, "_tooltip_delay_ms", 300))
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def stop_parsing(self) -> None:
         """Request stop of background collection (delegates to app)."""
