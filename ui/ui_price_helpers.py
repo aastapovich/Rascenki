@@ -4,8 +4,6 @@ Provides `PriceViewHelper` which wires tooltip-on-hover, double-click to
 open full name, and selection handler for the `ttk.Treeview`.
 """
 from __future__ import annotations
-
-import traceback
 from tkinter import Toplevel, Text, BOTH, END, Message
 from typing import Any
 
@@ -28,8 +26,11 @@ class PriceViewHelper:
             tree.bind("<Leave>", self._on_leave)
             tree.bind("<<TreeviewSelect>>", self._on_select)
             tree.bind("<Double-1>", self._on_double_click)
-        except Exception:
-            traceback.print_exc()
+        except Exception as e:
+            try:
+                print(f"ui_price_helpers: error binding tree events: {e}")
+            except Exception:
+                pass
 
     def _on_select(self, event=None):
         try:
@@ -41,8 +42,11 @@ class PriceViewHelper:
             if not full:
                 return
             self.app.progress_log.config(text=full)
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                print(f"ui_price_helpers: error in _on_select: {e}")
+            except Exception:
+                pass
 
     def _on_double_click(self, event):
         try:
@@ -58,8 +62,11 @@ class PriceViewHelper:
             txt.pack(fill=BOTH, expand=True)
             txt.insert(END, full)
             txt.config(state="disabled")
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                print(f"ui_price_helpers: error in _on_double_click: {e}")
+            except Exception:
+                pass
 
     def _on_motion(self, event):
         try:
@@ -69,8 +76,11 @@ class PriceViewHelper:
                 if self._after_id:
                     try:
                         self.app.root.after_cancel(self._after_id)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        try:
+                            print(f"ui_price_helpers: error cancelling after_id: {e}")
+                        except Exception:
+                            pass
                     self._after_id = None
                 self._destroy_tooltip()
                 return
@@ -78,8 +88,11 @@ class PriceViewHelper:
             if self._row == rowid and self._tooltip and getattr(self, "_tooltip_label", None):
                 try:
                     self._tooltip.geometry(f"+{event.x_root + 20}+{event.y_root + 10}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    try:
+                        print(f"ui_price_helpers: error in deferred tooltip show: {e}")
+                    except Exception:
+                        pass
                 return
 
             if self._after_id:
@@ -103,13 +116,19 @@ class PriceViewHelper:
                     pass
             try:
                 self._after_id = self.app.root.after(self._delay_ms, _deferred)
-            except Exception:
+            except Exception as e:
                 try:
                     _deferred()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                except Exception as e2:
+                    try:
+                        print(f"ui_price_helpers: error scheduling/deferred: {e} / {e2}")
+                    except Exception:
+                        pass
+        except Exception as e:
+            try:
+                print(f"ui_price_helpers: error in _on_motion: {e}")
+            except Exception:
+                pass
 
     @property
     def delay_ms(self) -> int:
@@ -119,8 +138,11 @@ class PriceViewHelper:
         if self._after_id:
             try:
                 self.app.root.after_cancel(self._after_id)
-            except Exception:
-                pass
+            except Exception as e:
+                try:
+                    print(f"ui_price_helpers: error positioning tooltip: {e}")
+                except Exception:
+                    pass
             self._after_id = None
         self._row = None
         self._destroy_tooltip()
@@ -164,14 +186,21 @@ class PriceViewHelper:
                     self._tooltip.geometry(f"+{x}+{y}")
                 except Exception:
                     pass
-        except Exception:
+        except Exception as e:
+            try:
+                print(f"ui_price_helpers: error showing tooltip: {e}")
+            except Exception:
+                pass
             self._destroy_tooltip()
 
     def _destroy_tooltip(self):
         if getattr(self, "_tooltip", None):
             try:
                 self._tooltip.destroy()
-            except Exception:
-                pass
+            except Exception as e:
+                try:
+                    print(f"ui_price_helpers: error destroying tooltip: {e}")
+                except Exception:
+                    pass
         self._tooltip = None
         self._tooltip_label = None

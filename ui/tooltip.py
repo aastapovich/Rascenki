@@ -5,7 +5,6 @@ Contains the `Tooltip` class previously located in `ui_utils.py`.
 from __future__ import annotations
 
 from tkinter import Toplevel, Message
-from typing import Any
 
 
 class Tooltip:
@@ -27,22 +26,31 @@ class Tooltip:
                     if self._after_id:
                         try:
                             self.root.after_cancel(self._after_id)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            try:
+                                print(f"tooltip: error cancelling after_id: {e}")
+                            except Exception:
+                                pass
                         self._after_id = None
-                    self._destroy()
+                        self._destroy()
                     return
                 if self._row == rowid and self._tooltip:
                     try:
                         self._tooltip.geometry(f"+{event.x_root + 20}+{event.y_root + 10}")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        try:
+                            print(f"tooltip: error moving tooltip: {e}")
+                        except Exception:
+                            pass
                     return
-                if self._after_id:
-                    try:
-                        self.root.after_cancel(self._after_id)
-                    except Exception:
-                        pass
+                    if self._after_id:
+                        try:
+                            self.root.after_cancel(self._after_id)
+                        except Exception as e:
+                            try:
+                                print(f"tooltip: error cancelling after_id: {e}")
+                            except Exception:
+                                pass
                     self._after_id = None
 
                     self._row = rowid
@@ -55,18 +63,27 @@ class Tooltip:
                         if not full:
                             return
                         self._show(full, xr + 20, yr + 10)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        try:
+                            print(f"tooltip: error in deferred show: {e}")
+                        except Exception:
+                            pass
 
                 try:
                     self._after_id = self.root.after(self.delay_ms, _deferred)
-                except Exception:
+                except Exception as e:
                     try:
                         _deferred()
-                    except Exception:
-                        pass
-            except Exception:
-                pass
+                    except Exception as e2:
+                        try:
+                            print(f"tooltip: error scheduling/deferred: {e} / {e2}")
+                        except Exception:
+                            pass
+            except Exception as e:
+                try:
+                    print(f"tooltip: error after layout update: {e}")
+                except Exception:
+                    pass
 
         def _leave(event):
             if self._after_id:
@@ -120,14 +137,21 @@ class Tooltip:
                     self._tooltip.geometry(f"+{x}+{y}")
                 except Exception:
                     pass
-        except Exception:
+        except Exception as e:
+            try:
+                print(f"tooltip: error showing tooltip: {e}")
+            except Exception:
+                pass
             self._destroy()
 
     def _destroy(self):
         if self._tooltip:
             try:
                 self._tooltip.destroy()
-            except Exception:
-                pass
+            except Exception as e:
+                try:
+                    print(f"tooltip: error destroying tooltip: {e}")
+                except Exception:
+                    pass
         self._tooltip = None
         self._tooltip_label = None

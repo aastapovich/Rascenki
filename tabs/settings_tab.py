@@ -9,7 +9,6 @@ import os
 from tkinter import Frame, Label, Button, StringVar, messagebox, ttk
 from tkinter import filedialog
 from ui.ui_style import PADDING, SMALL_PADDING
-import json
 
 from .print_service import PrintService
 
@@ -57,8 +56,11 @@ def make_tab(parent, ctrl):
         font_path_var.set(path)
         try:
             ctrl.print_font_path = path
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                print(f"settings_tab: error setting print_font_path: {e}")
+            except Exception:
+                pass
         messagebox.showinfo(
             "Шрифт выбран", f"Шрифт сохранён для печати: {os.path.basename(path)}"
         )
@@ -73,8 +75,11 @@ def make_tab(parent, ctrl):
         if ok:
             try:
                 ctrl.print_font_path = path
-            except Exception:
-                pass
+            except Exception as e:
+                try:
+                    print(f"settings_tab: error setting print_font_path after register: {e}")
+                except Exception:
+                    pass
             messagebox.showinfo(
                 "Успех",
                 f"Шрифт {os.path.basename(path)} зарегистрирован и пригоден для печати",
@@ -128,8 +133,11 @@ def make_tab(parent, ctrl):
         font_path_var.set("")
         try:
             ctrl.print_font_path = None
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                print(f"settings_tab: error clearing print_font_path in controller: {e}")
+            except Exception:
+                pass
         messagebox.showinfo("Готово", "Путь к шрифту удалён из настроек")
 
     btn_del = Button(font_group, text="Удалить шрифт", command=_delete_font)
