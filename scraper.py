@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from typing import Iterable, Iterator, Tuple
+from typing import Iterator, Tuple
 
 # Use a module-level session for connection reuse
 _SESSION = requests.Session()
